@@ -78,13 +78,14 @@
     return getObj('player', playerid);
   };
 
-  const chat = (playerid, msg) => {
+  const chat = (playerid, msg, opts = {}) => {
     let final_msg;
-    if (playerIsGM(playerid)) {
-      final_msg = msg;
-    } else {
+    if (!playerIsGM(playerid) ||
+        opts['force_whisper']) {
       const player = findPlayer(playerid);
       final_msg = `/w ${player.get("_displayname")} ${msg}`;
+    } else {
+      final_msg = msg;
     }
     sendChat("PF1Conditions", final_msg);
   };
@@ -100,7 +101,7 @@
   const printCondition = (condition_name, playerid) => {
     const desc = conditions[condition_name.toLowerCase()];
     if (desc === undefined) {
-      chat(playerid, notFoundMessage(condition_name));
+      chat(playerid, notFoundMessage(condition_name), {force_whisper: true});
     } else {
       chat(playerid, buildCondMessage(condition_name, desc));
     }
