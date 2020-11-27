@@ -6,30 +6,35 @@
  */
 
 (function () {
-  const getTurnOrder = function() {
+  const _log = (msg) => {
+    log("[AddRoundCounter] " + msg);
+  };
+
+  const getTurnOrder = () => {
     let to=Campaign().get("turnorder");
     to=(''===to ? '[]' : to);
     return JSON.parse(to);
   };
 
-  const setTurnOrder = function(turnOrder) {
+  const setTurnOrder = (turnOrder) => {
     Campaign().set({turnorder: JSON.stringify(turnOrder)});
   };
 
-  const hasTurn = function(id) {
-    return (_.filter(getTurnOrder(),function(turn){
+  const hasTurn = (id) => {
+    return (_.filter(getTurnOrder(), (turn) => {
       return id == turn.id;
     }).length != 0);
   };
 
-  const addTurn = function(entry) {
+  const addTurn = (entry) => {
     var turnorder = getTurnOrder();
     turnorder.push(entry);
     setTurnOrder(turnorder);
   };
 
-  const clearTurnOrder= function() {
+  const clearTurnOrder = () => {
     setTurnOrder([]);
+    _log("turn order cleared");
   };
 
   const counter = {
@@ -39,14 +44,18 @@
     formula:"+1"
   };
 
-  on("change:campaign:initiativepage", function() {
+  on("change:campaign:initiativepage", () => {
     if (Campaign().get('initiativepage') === true) {
       log("[AddRoundCounter] Init page loaded, clearing turn order");
       clearTurnOrder();
       if (!hasTurn(counter.id)) {
-        log("[AddRoundCounter] Adding round counter");
+        _log("adding round counter");
         addTurn(counter);
       }
     }
+  });
+
+  on("ready", () => {
+    _log("loaded");
   });
 }());
