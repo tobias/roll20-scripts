@@ -110,7 +110,8 @@
   on("chat:message", (msg) => {
     const [cmd, condition] = msg.content.split(" ");
     if (cmd === "!cond") {
-      if ("list" === condition) {
+      if (undefined === condition ||
+          "list" === condition) {
         listConditions(msg.playerid);
       } else {
         printCondition(condition, msg.playerid);
