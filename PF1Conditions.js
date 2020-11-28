@@ -123,3 +123,6 @@
     _log("loaded");
   });
 })();
+
+// signal that this plugin is loaded for other plugins to see
+const PF1Conditions = true;
