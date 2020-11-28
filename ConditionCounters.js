@@ -1,15 +1,21 @@
-// count down status
-// msg gm on each turn with rounds remaining
-// msg player on their turn with current conditions
-
-// keep track of the the creature that was active at that turn. If we
-// reach the creature's turn again, count down. If the creature is no
-// longer in init when we hit the affected creature, count down at
-// that point
+/*
+ * Adds/removes conditions (with appropriate status markers) for
+ * creatures, and handles counting down durations.
+ *
+ * Source: https://github.com/tobias/roll20-scripts/blob/main/ConditionCounters.js
+ */
 
 (function() {
   const _log = (msg) => {
     log("[ConditionCounters] " + msg);
+  };
+
+  const capitalize = (str) => {
+    if(typeof str === 'string') {
+        return str.replace(/^\w/, c => c.toUpperCase());
+    } else {
+        return '';
+    }
   };
 
   const j = JSON.stringify;
@@ -84,6 +90,18 @@
     return undefined;
   };
 
+  const getNotifiableName = (id) => {
+    let person = getObj("player", id);
+    if (!person) {
+      person = getObj("character", id);
+    }
+    if (person) {
+      return person.get("_displayname") || person.get("name");
+    } else {
+      return undefined;
+    }
+  };
+
   const whisper = (to, msg) => {
     let name;
 
@@ -91,13 +109,7 @@
         playerIsGM(to)) {
       name = "gm";
     } else {
-      let person = getObj("player", to);
-      if (!person) {
-        person = getObj("character", to);
-      }
-      if (person) {
-        name = person.get("_displayname") || person.get("name");
-      }
+      name = getNotifiableName(to);
     }
     _log(`whispering ${name} ${msg}`);
     if (name) {
@@ -196,15 +208,20 @@
 
   const randGoodNews = randNews(goodNews);
 
+  const hl = (str) => {
+    return `<strong>${capitalize(str)}</strong>`;
+  };
+
   const notifyConditionAdded = (to, target, condition, duration) => {
     if (target) {
       const character = getObj("character", target);
       const character_name = character.get("name");
       if (character) {
         if ("gm" === to) {
-          whisper("gm", `Added ${condition} to ${character_name} (duration: ${duration})`);
+          whisper("gm", `Added ${hl(condition)} to ${hl(character_name)}` +
+                  (duration ? ` (duration: ${duration})` : ""));
         } else {
-          whisper(target, `${randBadNews()} You now have the ${condition} condition`);
+          whisper(target, `${randBadNews()} You now have the ${hl(condition)} condition`);
         }
       }
     }
@@ -216,19 +233,12 @@
       const character_name = character.get("name");
       if (character) {
         if ("gm" === to) {
-          whisper("gm", `Removed ${condition} from ${character_name}`);
+          whisper("gm", `Removed ${hl(condition)} from ${hl(character_name)}`);
         } else {
-          whisper(target, `${randGoodNews()} You no longer have the ${condition} condition`);
+          whisper(target, `${randGoodNews()} You no longer have the ${hl(condition)} condition`);
         }
       }
     }
-  };
-
-  // assumes AddRoundCounter is active!
-  const findRoundCount = () => {
-    _log("to: " + j(getTurnOrder()));
-    const counter = _.find(getTurnOrder(), (turn) => "-1" === turn.id);
-    return counter.pr;
   };
 
   const addCondition = (obj, requestor, condition_name, duration) => {
@@ -244,13 +254,15 @@
           setStateCondition({
             actor: actor_id,
             target: obj.id,
-            updated_on_round: findRoundCount(),
+            updated_on_round: AddRoundCounter.getRoundCount(),
             condition: condition_name,
             duration: duration
           });
         }
       }
-      notifyConditionAdded(represents, represents, condition_name, duration);
+      if (!playerIsGM(represents)) {
+        notifyConditionAdded(represents, represents, condition_name, duration);
+      }
       notifyConditionAdded("gm", represents, condition_name, duration);
     } else {
       whisper(requestor, `Unknown condition ${condition_name}`);
@@ -264,12 +276,46 @@
       if(hasToken(obj, tag)) {
         removeStateCondition(obj.id, condition_name);
         removeTokens(obj, [tag]);
-        notifyConditionRemoved(represents, represents, condition_name);
+        if (!playerIsGM(represents)) {
+          notifyConditionRemoved(represents, represents, condition_name);
+        }
         notifyConditionRemoved("gm", represents, condition_name);
       }
     } else {
       whisper(requestor, `Unknown condition ${condition_name}`);
     }
+  };
+
+  const showConditions = (_obj, requestor) => {
+    const turnorder = getTurnOrder();
+    const active_ids = _.map(turnorder, (turn) => turn.id);
+    const conditions = _.filter(state.ConditionCounters.conditions,
+                                (cond) => active_ids.includes(cond.target));
+    const active_conditions = _.reduce(conditions,
+                                       (acc, cond) => {
+                                         if (!acc[cond.target]) {
+                                           acc[cond.target] = [];
+                                         }
+                                         acc[cond.target].push(cond);
+                                         return acc;
+                                       },
+                                       {});
+    let msg = "<ul>";
+    _.each(_.pairs(active_conditions),
+           (pair) => {
+             const [id, conditions] = pair;
+             const obj = getObj("graphic", id);
+             const name = getNotifiableName(obj.get("represents"));
+             if (name) {
+               msg += `<li>${name}:<ul>`;
+               _.each(conditions, (cond) => {
+                 msg += `<li>${hl(cond.condition)} (duration: ${cond.duration})</li>`;
+               });
+               msg += "</ul></li>";
+             }
+           });
+    msg += "</ul>";
+    whisper(requestor, msg);
   };
 
   const clearConditions = (obj, requestor) => {
@@ -288,7 +334,7 @@
   };
 
   const countDownCondition = (cond) => {
-    const round_count = findRoundCount();
+    const round_count = AddRoundCounter.getRoundCount();
     if (round_count > cond.updated_on_round) {
       cond.duration -= 1;
       cond.uodated_on_round = round_count;
@@ -340,6 +386,9 @@
         case "remove":
           f = removeCondition;
           break;
+        case "show":
+          f = showConditions;
+          break;
         default:
           whisper(msg.playerid, `invalid command: !cc ${subcmd}`);
           _log("Invalid command: " + subcmd);
@@ -367,7 +416,14 @@
   on("ready", () => {
     initState();
     token_markers = JSON.parse(Campaign().get("token_markers"));
-    _log("loaded");
+    // AddRoundCounter must be loaded since this uses it to track the
+    // round count
+    if (AddRoundCounter) {
+      _log("loaded");
+    } else {
+      _log("ERROR: AddRoundCounter not found!");
+    }
   });
 
 })();
+
