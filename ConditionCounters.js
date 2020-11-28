@@ -241,10 +241,11 @@
     }
   };
 
-  const characterHasSingleController = (id) => {
+  const characterHasController = (id) => {
     const character = getObj("character", id);
     if (character) {
-      return character.get("controlledby").length === 1;
+      const controlledby = character.get("controlledby");
+      return "" !== controlledby;
     } else {
       return false;
     }
@@ -269,7 +270,7 @@
           });
         }
       }
-      if (characterHasSingleController(represents)) {
+      if (characterHasController(represents)) {
         notifyConditionAdded(represents, represents, condition_name, duration);
       }
       notifyConditionAdded("gm", represents, condition_name, duration);
@@ -285,7 +286,7 @@
       if(hasToken(obj, tag)) {
         removeStateCondition(obj.id, condition_name);
         removeTokens(obj, [tag]);
-        if (characterHasSingleController(represents)) {
+        if (characterHasController(represents)) {
           notifyConditionRemoved(represents, represents, condition_name);
         }
         notifyConditionRemoved("gm", represents, condition_name);
