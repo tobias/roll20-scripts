@@ -5,14 +5,15 @@
  * Source: https://github.com/tobias/roll20-scripts/blob/main/AddRoundCounter.js
  */
 
+const AddRoundCounter =
 (function () {
   const _log = (msg) => {
     log("[AddRoundCounter] " + msg);
   };
 
   const getTurnOrder = () => {
-    let to=Campaign().get("turnorder");
-    to=(''===to ? '[]' : to);
+    let to = Campaign().get("turnorder");
+    to = ('' === to ? '[]' : to);
     return JSON.parse(to);
   };
 
@@ -44,18 +45,30 @@
     formula:"+1"
   };
 
-  on("change:campaign:initiativepage", () => {
-    if (Campaign().get('initiativepage') === true) {
-      log("[AddRoundCounter] Init page loaded, clearing turn order");
-      clearTurnOrder();
-      if (!hasTurn(counter.id)) {
-        _log("adding round counter");
-        addTurn(counter);
+  const init = () => {
+    on("change:campaign:initiativepage", () => {
+      if (Campaign().get('initiativepage') === true) {
+        _log("Init page loaded, clearing turn order");
+        clearTurnOrder();
+        if (!hasTurn(counter.id)) {
+          _log("adding round counter");
+          addTurn(counter);
+        }
       }
-    }
-  });
+    });
 
-  on("ready", () => {
-    _log("loaded");
-  });
+    on("ready", () => {
+      _log("loaded");
+    });
+  };
+
+  return {
+    init: init,
+    getRoundCount: () => {
+      const c = _.find(getTurnOrder(), (turn) => counter.id === turn.id);
+      return c.pr;
+    }
+  };
 }());
+
+AddRoundCounter.init();
