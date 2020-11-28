@@ -241,6 +241,15 @@
     }
   };
 
+  const characterHasSingleController = (id) => {
+    const character = getObj("character", id);
+    if (character) {
+      return character.get("controlledby").length === 1;
+    } else {
+      return false;
+    }
+  };
+
   const addCondition = (obj, requestor, condition_name, duration) => {
     const tag = tagForCondition(condition_name);
     const represents = obj.get("represents");
@@ -260,7 +269,7 @@
           });
         }
       }
-      if (!playerIsGM(represents)) {
+      if (characterHasSingleController(represents)) {
         notifyConditionAdded(represents, represents, condition_name, duration);
       }
       notifyConditionAdded("gm", represents, condition_name, duration);
@@ -276,7 +285,7 @@
       if(hasToken(obj, tag)) {
         removeStateCondition(obj.id, condition_name);
         removeTokens(obj, [tag]);
-        if (!playerIsGM(represents)) {
+        if (characterHasSingleController(represents)) {
           notifyConditionRemoved(represents, represents, condition_name);
         }
         notifyConditionRemoved("gm", represents, condition_name);
