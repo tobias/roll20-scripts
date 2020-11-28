@@ -212,16 +212,24 @@
     return `<strong>${capitalize(str)}</strong>`;
   };
 
+  const fmtcond = (name) => {
+    if (PF1Conditions) {
+      return `[${capitalize(name)}](!cond ${name})`;
+    } else {
+      return `<strong>${capitalize(name)}</strong>`;
+    }
+  }
+
   const notifyConditionAdded = (to, target, condition, duration) => {
     if (target) {
       const character = getObj("character", target);
       const character_name = character.get("name");
       if (character) {
         if ("gm" === to) {
-          whisper("gm", `Added ${hl(condition)} to ${hl(character_name)}` +
+          whisper("gm", `Added ${fmtcond(condition)} to ${hl(character_name)}` +
                   (duration ? ` (duration: ${duration})` : ""));
         } else {
-          whisper(target, `${randBadNews()} You now have the ${hl(condition)} condition`);
+          whisper(target, `${randBadNews()} You now have the ${fmtcond(condition)} condition`);
         }
       }
     }
@@ -233,9 +241,9 @@
       const character_name = character.get("name");
       if (character) {
         if ("gm" === to) {
-          whisper("gm", `Removed ${hl(condition)} from ${hl(character_name)}`);
+          whisper("gm", `Removed ${fmtcond(condition)} from ${hl(character_name)}`);
         } else {
-          whisper(target, `${randGoodNews()} You no longer have the ${hl(condition)} condition`);
+          whisper(target, `${randGoodNews()} You no longer have the ${fmtcond(condition)} condition`);
         }
       }
     }
@@ -319,7 +327,7 @@
              if (name) {
                msg += `<li>${name}:<ul>`;
                _.each(conditions, (cond) => {
-                 msg += `<li>${hl(cond.condition)} (duration: ${cond.duration})</li>`;
+                 msg += `<li>${fmtcond(cond.condition)} (duration: ${cond.duration})</li>`;
                });
                msg += "</ul></li>";
              }

@@ -93,7 +93,7 @@
   const listConditions = (playerid) => {
     let condition_list = "";
     for (let key in conditions) {
-      condition_list += `<li>${capitalize(key)}</li>`;
+      condition_list += `<li>[${capitalize(key)}](!cond ${key})</li>`;
     }
     chat(playerid, `<div style="${message_style}"><h3>Conditions</h3><ul>${condition_list}</ul></div>`);
   };
