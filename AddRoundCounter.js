@@ -45,15 +45,19 @@ const AddRoundCounter =
     formula:"+1"
   };
 
+  const ensureRoundCounter = () => {
+    if (!hasTurn(counter.id)) {
+      _log("adding round counter");
+      addTurn(counter);
+    }
+  };
+
   const init = () => {
     on("change:campaign:initiativepage", () => {
       if (Campaign().get('initiativepage') === true) {
         _log("Init page loaded, clearing turn order");
         clearTurnOrder();
-        if (!hasTurn(counter.id)) {
-          _log("adding round counter");
-          addTurn(counter);
-        }
+        ensureRoundCounter();
       }
     });
 
@@ -65,6 +69,7 @@ const AddRoundCounter =
   return {
     init: init,
     getRoundCount: () => {
+      ensureRoundCounter();
       const c = _.find(getTurnOrder(), (turn) => counter.id === turn.id);
       return c.pr;
     }
