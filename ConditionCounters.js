@@ -192,7 +192,9 @@
     "Darn!",
     "Crikey!",
     "Bad news.",
-    "Well... crap."
+    "Well... crap.",
+    "I've got bad news and bad news.",
+    "Do not taunt happy fun ball.",
   ];
 
   const goodNews = [
@@ -200,6 +202,7 @@
     "Awesome!",
     "Guess what?",
     "Lucky you!",
+    "You're on lucky street today!",
   ];
 
   const randNews = (list) => () => list[randomInteger(list.length - 1)];
