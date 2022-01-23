@@ -370,25 +370,30 @@
   const handleTurnOrderChange = (obj, prev) => {
     const turnorder = getTurnOrder();
     const prev_turnorder = parseTurnOrder(prev.turnorder);
-    const actor = turnorder[0].id;
-    const prev_actor = prev_turnorder[0].id;
-    if (actor === prev_actor ||
-        turnorder.length != prev_turnorder.length) {
-      // the current actor probably hasn't changed, we're adding/removing/sorting
-      _log("init change w/o new actor");
+    if (turnorder.length === 0 ||
+        prev_turnorder.length === 0) {
+      _log("init change with empty turnorder or prev_turnorder");
     } else {
-      _log(`handling turnorder change for actor ${actor}`);
+      const actor = turnorder[0].id;
+      const prev_actor = prev_turnorder[0].id;
+      if (actor === prev_actor ||
+          turnorder.length != prev_turnorder.length) {
+        // the current actor probably hasn't changed, we're adding/removing/sorting
+        _log("init change w/o new actor");
+      } else {
+        _log(`handling turnorder change for actor ${actor}`);
 
-      // update all conditions where the actor is actor
-      _.each(findConditionsForActor(actor), countDownCondition);
+        // update all conditions where the actor is actor
+        _.each(findConditionsForActor(actor), countDownCondition);
 
-      // get all conditions where the target is actor. If actor for
-      // that cond is not in the turn order, update
-      _.each(findConditionsForTarget(actor), (cond) => {
-        if (!_.find(turnorder, (turn) => turn.id === cond.actor)) {
-          countDownCondition(cond);
-        }
-      });
+        // get all conditions where the target is actor. If actor for
+        // that cond is not in the turn order, update
+        _.each(findConditionsForTarget(actor), (cond) => {
+          if (!_.find(turnorder, (turn) => turn.id === cond.actor)) {
+            countDownCondition(cond);
+          }
+        });
+      }
     }
   };
 
